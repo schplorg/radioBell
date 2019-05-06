@@ -15,5 +15,5 @@ void loop() {
     Serial.println(mySwitch.getReceivedValue());       
     mySwitch.resetAvailable();
   }
-  delay(1); 
+  delay(10); 
 }
