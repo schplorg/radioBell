@@ -2,6 +2,7 @@
 #include <avr/sleep.h>
 
 RCSwitch mySwitch = RCSwitch();
+int counter = 1;
 void setup() {
   Serial.begin(9600);
   Serial.println("setup");
@@ -11,11 +12,16 @@ void setup() {
 }
 void loop() {
   Serial.println("loop");
-  for(int i = 0; i < 10; i++){
-    mySwitch.send(1234, 24);
+  mySwitch.send(counter, 24);
+  counter++;
+  /*
+  for(int i = 0; i < 3; i++){
+    mySwitch.send(counter, 24);
+    counter++;
     Serial.println("send");
     delay(10);
   }
+  */
   Sleep();
 }  
 void Sleep(){
@@ -23,7 +29,7 @@ void Sleep(){
     attachInterrupt(0, Wake, LOW);
     Serial.println("Sleep");
     set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-    delay(3000);
+    delay(100);
     sleep_cpu();
   }
 void Wake(){

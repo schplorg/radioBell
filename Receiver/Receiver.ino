@@ -1,7 +1,7 @@
 #include <RCSwitch.h>
 
 RCSwitch mySwitch = RCSwitch();
-
+int counter = -1;
 void setup() 
 {
   Serial.begin(9600);
@@ -12,7 +12,10 @@ void loop() {
   if (mySwitch.available())
   {
     int value = mySwitch.getReceivedValue();
-    Serial.println(mySwitch.getReceivedValue());       
+    if(counter != value){
+      counter = value;
+    Serial.println(value);  
+    }     
     mySwitch.resetAvailable();
   }
   delay(10); 
