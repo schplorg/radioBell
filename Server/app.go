@@ -2,22 +2,19 @@ package main
 
 import (
 	"fmt"
-	// "time"
 )
 
 func main() {
-	sc := createSerialChannel()
+	fmt.Println("creating server")
+	serv := createServer()
+	fmt.Println("creating serial")
+	ser := createSerialChannel()
+	// check for serial messages and broadcast them
 	for {
 		select {
-		case s := <-sc.serialChannel:
-			fmt.Println(s)
+		case message := <-ser.receive:
+			fmt.Print(message)
+			serv.broadcast <- []byte(message)
 		}
 	}
 }
-
-// func loop() {
-// 	ticker := time.NewTicker(time.Second)
-// 	for t := range ticker.C {
-// 		fmt.Println("Tick at", t)
-// 	}
-// }

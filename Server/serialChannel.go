@@ -6,12 +6,12 @@ import (
 )
 
 type SerialChannel struct {
-	serialChannel chan string
+	receive chan string
 }
 
 func createSerialChannel() *SerialChannel {
 	sc := &SerialChannel{
-		serialChannel: make(chan string),
+		receive: make(chan string),
 	}
 	c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600}
 	s, err := serial.OpenPort(c)
@@ -30,6 +30,6 @@ func (sc *SerialChannel) readSerial(s *serial.Port) {
 			fmt.Println("fail")
 		}
 		out := string(buf[:n])
-		sc.serialChannel <- out
+		sc.receive <- out
 	}
 }
