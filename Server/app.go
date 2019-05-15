@@ -5,6 +5,9 @@ import (
 )
 
 func main() {
+	defer func() {
+		fmt.Println("ending app")
+	}()
 	fmt.Println("creating server")
 	serv := createServer()
 	fmt.Println("creating serial")

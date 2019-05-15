@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type Server struct {
@@ -30,6 +31,9 @@ func createServer() *Server {
 	}
 	// check for new messages to broadcast
 	go func() {
+		defer func() {
+			fmt.Println("ending http serve")
+		}()
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, "index.html")
 		})
@@ -41,12 +45,21 @@ func createServer() *Server {
 		})
 		fmt.Println("serv.serveWs")
 		http.HandleFunc("/ws", serv.serveWs)
-		http.ListenAndServe(":58000", nil)
+		for {
+			err := http.ListenAndServe(":58000", nil)
+			if err != nil {
+				fmt.Println("ListenAndServe error!")
+			}
+		}
 	}()
 	go func() {
+		defer func() {
+			fmt.Println("ending broadcast")
+		}()
 		fmt.Println("serv.broadcast")
 		ticker := time.NewTicker(time.Second)
 		defer func() {
+			fmt.Println("ending ticker")
 			ticker.Stop()
 		}()
 		for {
@@ -67,15 +80,17 @@ func createServer() *Server {
 }
 
 func (serv *Server) serveWs(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("serveWs")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println("error!")
+		fmt.Println("Upgrade error!")
 	}
 	client := Client{send: make(chan []byte, 256), conn: conn}
 	serv.clients[&client] = true
 	// check for new messages to send
 	go func() {
 		defer func() {
+			fmt.Println("ending websocket")
 			client.conn.Close()
 		}()
 		for {
@@ -84,15 +99,23 @@ func (serv *Server) serveWs(w http.ResponseWriter, r *http.Request) {
 				{
 					writer, err := client.conn.NextWriter(websocket.TextMessage)
 					if err != nil {
-						fmt.Println("error!")
+						fmt.Println("NextWriter error!")
 						return
 					}
 					writer.Write(message)
 					n := len(client.send)
 					for i := 0; i < n; i++ {
-						writer.Write(<-client.send)
+						_, err = writer.Write(<-client.send)
+						if err != nil {
+							fmt.Println("Write error!")
+							return
+						}
 					}
-					writer.Close()
+					err = writer.Close()
+					if err != nil {
+						fmt.Println("Write error!")
+						return
+					}
 				}
 			}
 		}
