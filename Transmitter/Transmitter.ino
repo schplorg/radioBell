@@ -12,16 +12,12 @@ void setup() {
 }
 void loop() {
   Serial.println("loop");
-  mySwitch.send(counter, 24);
-  counter++;
-  /*
-  for(int i = 0; i < 3; i++){
+  //mySwitch.send(counter, 24);  
+  for(int i = 0; i < 8; i++){
     mySwitch.send(counter, 24);
-    counter++;
-    Serial.println("send");
-    delay(10);
+    delay(5);
   }
-  */
+  counter++;  
   Sleep();
 }  
 void Sleep(){
