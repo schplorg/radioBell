@@ -5,6 +5,7 @@ int counter = -1;
 void setup() 
 {
   Serial.begin(9600);
+  Serial.println("receive");  
   mySwitch.enableReceive(0);
 }
 
@@ -18,5 +19,5 @@ void loop() {
     }     
     mySwitch.resetAvailable();
   }
-  delay(10); 
+  delay(100); 
 }

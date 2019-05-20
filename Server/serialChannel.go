@@ -22,6 +22,13 @@ func createSerialChannel() *SerialChannel {
 		s, err := serial.OpenPort(c)
 		if err != nil {
 			fmt.Println("OpenPort /dev/ttyUSB1 error!")
+			c := &serial.Config{Name: "COM8", Baud: 9600}
+			s, err := serial.OpenPort(c)
+			if err != nil {
+				fmt.Println("OpenPort COM8 error!")
+			} else {
+				go sc.readSerial(s)
+			}
 		} else {
 			go sc.readSerial(s)
 		}
