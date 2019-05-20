@@ -9,6 +9,8 @@ import (
 )
 
 type Server struct {
+	srv       *http.Server
+	heartBeat chan string
 	clients   map[*Client]bool
 	broadcast chan []byte
 	files     []string
@@ -25,6 +27,8 @@ var upgrader = websocket.Upgrader{
 
 func createServer() *Server {
 	serv := Server{
+		srv:       &http.Server{Addr: ":58000"},
+		heartBeat: make(chan string),
 		clients:   make(map[*Client]bool),
 		broadcast: make(chan []byte),
 		files:     []string{"index.html", "index.js"},
@@ -46,7 +50,7 @@ func createServer() *Server {
 		fmt.Println("serv.serveWs")
 		http.HandleFunc("/ws", serv.serveWs)
 		for {
-			err := http.ListenAndServe(":58000", nil)
+			err := serv.srv.ListenAndServe()
 			if err != nil {
 				fmt.Println("ListenAndServe error!")
 			}
@@ -69,7 +73,8 @@ func createServer() *Server {
 					c.send <- message
 				}
 			case <-ticker.C:
-				fmt.Println("tick")
+				//fmt.Println("tick")
+				serv.heartBeat <- "tick"
 				for c := range serv.clients {
 					c.send <- []byte("tick")
 				}
