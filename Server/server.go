@@ -1,16 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"net/http"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
 type Server struct {
 	srv       *http.Server
-	heartBeat chan string
 	clients   map[*Client]bool
 	broadcast chan []byte
 	files     []string
@@ -25,35 +24,43 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+func (serv *Server) stopServer() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err := serv.srv.Shutdown(ctx)
+	if err != nil {
+		fmt.Printf("Shutdown failed: %s", err)
+	}
+	return err
+}
+
 func createServer() *Server {
+	mux := http.NewServeMux()
+	srv := &http.Server{Addr: ":58000", Handler: mux}
 	serv := Server{
-		srv:       &http.Server{Addr: ":58000"},
-		heartBeat: make(chan string),
+		srv:       srv,
 		clients:   make(map[*Client]bool),
 		broadcast: make(chan []byte),
-		files:     []string{"index.html", "index.js"},
 	}
 	// check for new messages to broadcast
 	go func() {
 		defer func() {
 			fmt.Println("ending http serve")
 		}()
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, "index.html")
 		})
-		http.HandleFunc("/index.js", func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc("/index.js", func(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, "index.js")
 		})
-		http.HandleFunc("/dmrdrn2.mp3", func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc("/dmrdrn2.mp3", func(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, "dmrdrn2.mp3")
 		})
 		fmt.Println("serv.serveWs")
-		http.HandleFunc("/ws", serv.serveWs)
-		for {
-			err := serv.srv.ListenAndServe()
-			if err != nil {
-				fmt.Println("ListenAndServe error!")
-			}
+		mux.HandleFunc("/ws", serv.serveWs)
+		err := serv.srv.ListenAndServe()
+		if err != nil {
+			fmt.Println("ListenAndServe error!")
 		}
 	}()
 	go func() {
@@ -73,8 +80,7 @@ func createServer() *Server {
 					c.send <- message
 				}
 			case <-ticker.C:
-				//fmt.Println("tick")
-				serv.heartBeat <- "tick"
+				fmt.Println("tick")
 				for c := range serv.clients {
 					c.send <- []byte("tick")
 				}
@@ -97,6 +103,7 @@ func (serv *Server) serveWs(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			fmt.Println("ending websocket")
 			client.conn.Close()
+			delete(serv.clients, &client)
 		}()
 		for {
 			select {
