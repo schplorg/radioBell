@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/tarm/serial"
+	"os"
 )
 
 type SerialChannel struct {
@@ -11,29 +11,39 @@ type SerialChannel struct {
 }
 
 func createSerialChannel() *SerialChannel {
+
+	ports := func() (ports []string) {
+		ports = make([]string, 0)
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Println("recovered from:", err)
+				ports = []string{
+					"/dev/ttyUSB0",
+					"/dev/ttyUSB1",
+					"COM8",
+				}
+			}
+		}()
+		if len(os.Args) <= 1 {
+			panic("too few args!")
+		}
+		argi := os.Args[1]
+		ports = append(ports, argi)
+		return
+	}()
+
 	sc := &SerialChannel{
 		receive: make(chan string),
 	}
-	c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600}
-	s, err := serial.OpenPort(c)
-	if err != nil {
-		fmt.Println("OpenPort /dev/ttyUSB0 error!")
-		c := &serial.Config{Name: "/dev/ttyUSB1", Baud: 9600}
+	for _, p := range ports {
+		c := &serial.Config{Name: p, Baud: 9600}
 		s, err := serial.OpenPort(c)
 		if err != nil {
-			fmt.Println("OpenPort /dev/ttyUSB1 error!")
-			c := &serial.Config{Name: "COM8", Baud: 9600}
-			s, err := serial.OpenPort(c)
-			if err != nil {
-				fmt.Println("OpenPort COM8 error!")
-			} else {
-				go sc.readSerial(s)
-			}
+			fmt.Println("OpenPort " + p + " error!")
 		} else {
 			go sc.readSerial(s)
+			break
 		}
-	} else {
-		go sc.readSerial(s)
 	}
 	return sc
 }
