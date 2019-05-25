@@ -47,15 +47,9 @@ func createServer() *Server {
 		defer func() {
 			fmt.Println("ending http serve")
 		}()
-		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, "index.html")
-		})
-		mux.HandleFunc("/index.js", func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, "index.js")
-		})
-		mux.HandleFunc("/dmrdrn2.mp3", func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, "dmrdrn2.mp3")
-		})
+		fs := http.FileServer(http.Dir("public"))
+		mux.Handle("/", fs)
+
 		fmt.Println("serv.serveWs")
 		mux.HandleFunc("/ws", serv.serveWs)
 		err := serv.srv.ListenAndServe()
