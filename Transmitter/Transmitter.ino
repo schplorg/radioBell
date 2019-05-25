@@ -10,20 +10,42 @@ void setup() {
   pinMode(2,INPUT_PULLUP);
   mySwitch.enableTransmit(10);
 }
+bool wake = false;
 void loop() {
   Serial.println("loop");
-  //mySwitch.send(counter, 24);  
+  wake = true;
+  attachInterrupt(0, Press, LOW);
+  while(wake){
+    delay(5000);
+    wake = false;
+  }
+  detachInterrupt(0);
+  Sleep();
+}  
+bool pressed = false;
+void Press(){  
+  wake = true;
+  if(pressed){
+    counter++;
+    return;
+  }else{
+    pressed = true;
+  }
+  Serial.println("Press");  
+  mySwitch.send(counter, 24);
+  /*
   for(int i = 0; i < 8; i++){
     mySwitch.send(counter, 24);
     delay(5);
   }
+  */
   counter++;  
-  Sleep();
-}  
+  pressed = false;
+}
 void Sleep(){
+    Serial.println("Sleep");
     sleep_enable();
     attachInterrupt(0, Wake, LOW);
-    Serial.println("Sleep");
     set_sleep_mode(SLEEP_MODE_PWR_DOWN);
     delay(100);
     sleep_cpu();
